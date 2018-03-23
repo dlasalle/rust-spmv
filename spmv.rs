@@ -1,3 +1,8 @@
+use std::fs::File;
+use std::io::BufReader;
+use std::error::Error;
+use std::io::BufRead;
+
 struct CSR
 {
   prefix: Vec<u64>,
@@ -15,6 +20,28 @@ fn multiply(matrix: &CSR, in_vec: &Vec<f32>, out_vec: &mut Vec<f32>)
     }
     out_vec[i] = val;
   }
+}
+
+fn load_vector(filename: String) -> Vec<f32>
+{
+  let mut v: Vec<f32> = Vec::new();
+  let file = match File::open(&filename) {
+    Err(why) => panic!("Unable to open {}: {}", filename, why.description()),
+    Ok(file) => file,
+  };
+
+  let buffer = BufReader::new(&file);
+  for (num, line) in buffer.lines().enumerate() {
+    let l = line.unwrap();
+    let r = l.parse::<f32>();
+    if r.is_err() {
+      panic!("Failed to parse file value from {} at line {}", l, num);
+    }
+
+    v.push(r.unwrap());
+  }
+
+  return v;
 }
 
 fn main()
