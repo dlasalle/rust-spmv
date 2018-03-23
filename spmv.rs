@@ -1,7 +1,10 @@
 use std::fs::File;
 use std::io::BufReader;
-use std::error::Error;
 use std::io::BufRead;
+use std::io::BufWriter;
+use std::io::Write;
+use std::error::Error;
+use std::env;
 
 struct CSR
 {
@@ -44,16 +47,43 @@ fn load_vector(filename: String) -> Vec<f32>
   return v;
 }
 
+fn save_vector(filename: String, vec: &Vec<f32>)
+{
+  let file = match File::create(&filename) {
+    Err(why) => panic!("Failed to save output vector {}: {}", filename, why.description()),
+    Ok(file) => file,
+  };
+
+  let mut buffer = BufWriter::new(&file);
+  for val in vec {
+    let try = write!(buffer, "{}\n", val);
+    if try.is_err() {
+      panic!("Failed while writing output vector {}", filename)
+    }
+  }
+}
+
 fn main()
 {
+  let args: Vec<String> = env::args().collect();
+
+  if args.len() != 2 {
+    panic!("Invalid arguments - usage: spmv <in vec> <out vec>")
+  }
+
+  let vec_in_filename = args[0].clone();
+  let vec_out_filename = args[1].clone();
+
   let mat = CSR{
     prefix: vec![0; 5],
     columns: vec![0; 5],
     values: vec![0.0; 5],
   };
 
-  let x = vec![1.0; 5];
+  let x = load_vector(vec_in_filename);
   let mut y = vec![0.0; 5];
 
   multiply(&mat, &x, &mut y);
+
+  save_vector(vec_out_filename, &y);
 }
